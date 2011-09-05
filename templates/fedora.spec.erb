@@ -113,6 +113,9 @@ ln -s %{gemdir}/gems/%{gemname}-%{version}/<%= p %> %{buildroot}%{ruby_sitelib}
 rm -rf %{buildroot}%{geminstdir}/ext
 <% end -%>
 
+%clean
+%{__rm} -rf %{buildroot}
+
 %files
 %dir %{geminstdir}
 <% unless spec.executables.nil? or spec.executables.empty? -%>
