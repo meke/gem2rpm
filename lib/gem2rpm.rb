@@ -1,6 +1,5 @@
 require 'erb'
 require 'socket'
-require 'rubygems/format'
 require 'gem2rpm/distro'
 require 'gem2rpm/specification'
 
@@ -10,8 +9,16 @@ require 'gem2rpm/specification'
 GEM_VERSION = Gem::Version.create(Gem::RubyGemsVersion)
 HAS_REMOTE_INSTALLER = GEM_VERSION < Gem::Version.create("1.0.0")
 
+HAS_GEMS_FORMAT= GEM_VERSION < Gem::Version.create("1.9")
+
 if HAS_REMOTE_INSTALLER
   require 'rubygems/remote_installer'
+end
+
+if HAS_GEMS_FORMAT
+  require 'rubygems/format'
+else
+  require 'rubygems/package'
 end
 
 module Gem2Rpm
@@ -34,10 +41,20 @@ module Gem2Rpm
     end
   end
 
+  if HAS_GEMS_FORMAT
+    def self.get_spec(fname)
+      format = Gem::Format.from_file_by_path(fname)
+      return Gem2Rpm::Specification.new(format.spec)
+    end
+  else
+    def self.get_spec(fname)
+      return Gem::Package.new(fname).spec
+    end
+  end
+
   def Gem2Rpm.convert(fname, template=TEMPLATE, out=$stdout,
                       nongem=true, local=false, doc_subpackage = true)
-    format = Gem::Format.from_file_by_path(fname)
-    spec = Gem2Rpm::Specification.new(format.spec)
+    spec = get_spec(fname)
     spec.description ||= spec.summary
     download_path = ""
     unless local
