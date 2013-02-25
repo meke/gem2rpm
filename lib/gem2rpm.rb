@@ -22,7 +22,7 @@ else
 end
 
 module Gem2Rpm
-  Gem2Rpm::VERSION = "0.7.1"
+  Gem2Rpm::VERSION = "0.8.2"
 
   if HAS_REMOTE_INSTALLER
     def self.find_download_url(name, version)
@@ -75,20 +75,25 @@ module Gem2Rpm
   # gem2spec).  Taken from RPM macros if present, constructed from system
   # username and hostname otherwise.
   def Gem2Rpm.packager()
-    packager = `rpmdev-packager`.chomp
+    packager = `rpmdev-packager`.chomp rescue ''
 
     if packager.empty?
-      packager = `rpm --eval '%{packager}'`.chomp
+      packager = `rpm --eval '%{packager}'`.chomp rescue ''
     end
 
     if packager.empty? or packager == '%{packager}'
-      packager = "#{Etc::getpwnam(Etc::getlogin).gecos} <#{Etc::getlogin}@#{Socket::gethostname}>"
+      passwd_entry = Etc::getpwnam(Etc::getlogin)
+      packager = "#{(passwd_entry && passwd_entry.gecos) || Etc::getlogin } <#{Etc::getlogin}@#{Socket::gethostname}>"
     end
 
     packager
   end
 
-  TEMPLATE = File.read File.join(File.dirname(__FILE__), '..', 'templates', "#{Distro.nature.to_s}.spec.erb")
+  def Gem2Rpm.template_dir
+    File.join(File.dirname(__FILE__), '..', 'templates')
+  end
+
+  TEMPLATE = File.read File.join(template_dir, "#{Distro.nature.to_s}.spec.erb")
 end
 
 # Local Variables:
